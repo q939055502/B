@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalStorage查看器</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: #333; }
+        .value-display { background: #f5f5f5; padding: 15px; border-radius: 5px; white-space: pre-wrap; }
+        button { padding: 8px 16px; background: #4285f4; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #3367d6; }
+        .checkbox-item { color: #1a73e8; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LocalStorage - engineeringTableColumns</h1>
+        <button id="refreshBtn">刷新数据</button>
+        <div class="value-display" id="displayArea">加载中...</div>
+    </div>
+
+    <script>
+        function displayLocalStorage() {
+            const displayArea = document.getElementById('displayArea');
+            try {
+                // 读取localStorage中的engineeringTableColumns值
+                const storedValue = localStorage.getItem('engineeringTableColumns');
+                if (storedValue) {
+                    const columns = JSON.parse(storedValue);
+                    let displayText = 'engineeringTableColumns的值：\n';
+                    displayText += JSON.stringify(columns, null, 2) + '\n\n';
+                    displayText += '复选框相关的列（包含visible属性）：\n';
+                    
+                    // 查找包含visible属性的列
+                    const checkboxColumns = columns.filter(col => col.hasOwnProperty('visible'));
+                    if (checkboxColumns.length > 0) {
+                        checkboxColumns.forEach(col => {
+                            displayText += `- ${col.label || col.prop || col.en}: visible=${col.visible}\n`;
+                        });
+                    } else {
+                        displayText += '未找到包含visible属性的列\n';
+                    }
+                    displayArea.textContent = displayText;
+                } else {
+                    displayArea.textContent = 'localStorage中未找到engineeringTableColumns值';
+                }
+            } catch (error) {
+                displayArea.textContent = '读取数据时出错：' + error.message;
+            }
+        }
+
+        // 初始加载
+        document.addEventListener('DOMContentLoaded', displayLocalStorage);
+        // 绑定刷新按钮事件
+        document.getElementById('refreshBtn').addEventListener('click', displayLocalStorage);
+    </script>
+</body>
+</html>

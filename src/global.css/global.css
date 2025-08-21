@@ -1,0 +1,16 @@
+/* src/styles/global.css */
+/* 全局样式重置，解决页面不铺满问题 */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  /* 可选：设置默认背景色，避免白边 */
+  background-color: #f5f5f5;
+}
+
+/* 让所有元素继承 box-sizing，避免尺寸计算问题 */
+*, *::before, *::after {
+  box-sizing: inherit;
+}
