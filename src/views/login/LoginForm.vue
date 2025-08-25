@@ -10,13 +10,11 @@
         <input type="text" v-model="username" placeholder="请输入用户名/邮箱" class="form-input"  />
       </div>
       <div class="form-group">
-        <label class="input-label">密码</label>
+        <label class="input-label">密&#12288;码</label>
         <input type="password" v-model="password" placeholder="请输入密码" class="form-input" />
       </div>
       <div class="form-group">
-          <van-switch v-model="rememberMe" class="remember-me"  />
-          <span class="remember-me-text">记住我</span>
-
+          <el-checkbox v-model="rememberMe" class="remember-me-text">记住我</el-checkbox>
           <a href="#" @click.prevent="handleForgotPassword" class="forgot-password">忘记密码?</a>
 
       </div>
@@ -31,8 +29,7 @@
 import { ref, onMounted, defineEmits } from 'vue';
 const emit = defineEmits(['switch-to-register', 'switch-to-forgot-password']);
 import { userService } from '../../services/userService';
-import { ElMessage } from 'element-plus'; // 引入Element的消息提示组件
-// import StarSky from '../../views/components/StarSky.vue'; // 背景组件
+import { ElMessage } from 'element-plus'; 
 // Element Plus组件由unplugin-vue-components插件自动导入
 
 // 定义响应式变量
@@ -159,7 +156,7 @@ html, body {
 }
 
 .form-input {
-  width: 100%;
+  width: 80%;
   padding: 12px 15px;
   border: none;
   border-radius: 5px;
@@ -168,6 +165,7 @@ html, body {
   font-size: 16px;
   box-sizing: border-box;
   margin-top: 5px;
+  margin-left: auto;
 }
 
 .input-label {

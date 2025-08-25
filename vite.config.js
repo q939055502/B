@@ -3,8 +3,8 @@
 import { defineConfig, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
+// 仅在非生产环境导入自动导入插件
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
-import { VantResolver } from '@vant/auto-import-resolver';
 import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
 // 导入Tailwind CSS的PostCSS插件和autoprefixer
@@ -25,13 +25,11 @@ export default defineConfig(({ mode }) => {
       vue(),
       // 自动导入组件
       AutoImport({
-        resolvers: [ElementPlusResolver({ importStyle: false }), VantResolver()],
-        dts: 'src/types/auto-imports.d.ts' // 保留，生成类型文件,// 自动导入 API（如 ElMessage）
+        resolvers: [ElementPlusResolver({ importStyle: false })]
       }),
       // 自动注册组件
       Components({
-        resolvers: [ElementPlusResolver({ importStyle: false }), VantResolver()],
-        dts: 'src/types/auto-imports.d.ts' // 保留，生成类型文件 自动导入组件（如 el-checkbox）
+        resolvers: [ElementPlusResolver({ importStyle: false })]
       })
     ],
     
@@ -49,8 +47,20 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         // 设置@为src目录的别名
-        '@': path.resolve(__dirname, 'src')
-      }
+        '@': path.resolve(__dirname, 'src'),
+        // 显式配置Vue的解析路径
+        'vue': path.resolve(__dirname, 'node_modules/vue/dist/vue.esm-bundler.js')
+      },
+      // 确保正确解析包的入口文件
+      mainFields: ['module', 'jsnext:main', 'browser', 'main'],
+      // 添加 extensions 配置以确保正确解析模块
+      extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue']
+    },
+
+    // 优化配置
+    optimizeDeps: {
+      // 确保Vue被正确预构建
+      include: ['vue']
     },
     
     // 构建配置
@@ -58,16 +68,62 @@ export default defineConfig(({ mode }) => {
       // 开发环境生成sourcemap，生产环境不生成
       sourcemap: !isProduction,
       // 生产环境开启代码压缩
-      minify: isProduction
+      minify: isProduction,
+      // 生产环境优化配置
+      ...(isProduction ? {
+        // 减少构建过程中的内存使用
+        chunkSizeWarningLimit: 1000,
+        // 优化输出文件大小
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              // 将大型依赖拆分到独立chunk
+              vue: ['vue', 'vue-router', 'pinia'],
+              element: ['element-plus'],
+            },
+            // 压缩输出
+            compact: true,
+          },
+          // 关闭不必要的警告
+          onwarn: (warning, warn) => {
+            if (warning.code === 'MODULE_LEVEL_DIRECTIVE' || warning.code === 'UNUSED_EXTERNAL_IMPORT') {
+              return;
+            }
+            warn(warning);
+          },
+        },
+        // 禁用构建缓存以减少内存使用
+        cacheDir: false,
+        // 禁用CSS代码分割以减少内存使用
+        cssCodeSplit: false,
+      } : {})
     },
     
     // 开发服务器配置（仅开发环境有效）
     server: isProduction ? undefined : {
-      // 自动打开浏览器
-      open: true,
+      // 禁用自动打开浏览器（服务器环境中缺少xdg-open命令）
+      open: false,
       // 允许外部访问
       host: '0.0.0.0',
-      
+      // 修改端口为80
+      port: 80,
+      // 指定公网IP地址
+      public: 'http://8.130.145.238:80',
+      // 显式指定服务器origin
+      origin: 'http://8.130.145.238:80',
+      // 启用严格端口模式，确保使用指定端口
+      strictPort: true,
+      // 启用模块预构建
+      preTransformRequests: true,
+      // 增加模块解析超时
+      resolveTimeout: 10000,
+      // 配置history模式路由回退
+      historyApiFallback: true,
+      hmr: {
+        protocol: 'ws',
+        host: 'localhost', // 使用localhost
+        port: 24678 // 使用不同的端口避免冲突
+      },
       // 自定义中间件
       middleware: [
         // 全局请求日志中间件
@@ -102,9 +158,9 @@ export default defineConfig(({ mode }) => {
           // 自定义代理配置
           configure: (proxy, options) => {
             // 打印当前代理配置
-            // console.log('前端代理路径:', '/api');
-            // console.log('前端API基础URL:', urlHeader);
-            // console.log('后端目标URL:', urlHeader_proxy);
+            console.log('前端代理路径:', '/api');
+            console.log('前端API基础URL:', urlHeader);
+            console.log('后端目标URL:', urlHeader_proxy);
             
             if (!isProduction) {
               // 监听代理请求事件

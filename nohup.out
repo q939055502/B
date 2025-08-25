@@ -1,0 +1,51 @@
+
+> b@0.0.0 dev
+> vite
+
+前端代理路径: /api
+前端API基础URL: http://8.130.145.238:80
+后端目标URL: http://localhost:5000
+
+  VITE v7.1.1  ready in 1588 ms
+
+  ➜  Local:   http://localhost:80/
+  ➜  Network: http://172.20.40.249:80/
+重写URL: /api/auth/verify → /auth/verify
+代理请求: GET /auth/verify → http://localhost:5000/auth/verify
+重写URL: /api/user/logout → /user/logout
+代理请求: POST /user/logout → http://localhost:5000/user/logout
+重写URL: /api/user/login → /user/login
+代理请求: POST /user/login → http://localhost:5000/user/login
+重写URL: /api/report/get-total-active-reports → /report/get-total-active-reports
+代理请求: GET /report/get-total-active-reports → http://localhost:5000/report/get-total-active-reports
+
+> b@0.0.0 dev
+> vite
+
+前端代理路径: /api
+前端API基础URL: http://8.130.145.238:80
+后端目标URL: http://localhost:5000
+
+  VITE v7.1.1  ready in 1403 ms
+
+  ➜  Local:   http://localhost:80/
+  ➜  Network: http://172.20.40.249:80/
+重写URL: /api/announcement/get-latest → /announcement/get-latest
+代理请求: GET /announcement/get-latest → http://localhost:5000/announcement/get-latest
+9:09:43 AM [vite] (client) hmr update /src/tailwind.css
+9:09:43 AM [vite] (client) hmr update /src/tailwind.css
+[1m[33m[@vue/compiler-sfc][0m[33m `defineEmits` is a compiler macro and no longer needs to be imported.[0m
+
+9:09:43 AM [vite] (client) hmr update /src/tailwind.css
+重写URL: /api/auth/verify → /auth/verify
+代理请求: GET /auth/verify → http://localhost:5000/auth/verify
+9:09:43 AM [vite] (client) hmr update /src/tailwind.css
+重写URL: /api/user/logout → /user/logout
+代理请求: POST /user/logout → http://localhost:5000/user/logout
+9:09:43 AM [vite] (client) hmr update /src/tailwind.css
+重写URL: /api/user/login → /user/login
+代理请求: POST /user/login → http://localhost:5000/user/login
+9:09:46 AM [vite] (client) hmr update /src/tailwind.css
+重写URL: /api/report/get-total-active-reports → /report/get-total-active-reports
+代理请求: GET /report/get-total-active-reports → http://localhost:5000/report/get-total-active-reports
+9:09:46 AM [vite] (client) hmr update /src/tailwind.css

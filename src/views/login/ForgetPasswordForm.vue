@@ -5,20 +5,20 @@
     <form class="login-form" @submit.prevent="resetPasswordByCode">
       <h2 class="form-title">建设工程检查报告管理系统</h2>
       <div class="form-group">
-        <label class="input-label">邮箱</label>
+        <label class="input-label">邮&ensp;&ensp;&ensp;&ensp;箱</label>
         <input type="email" v-model="email" placeholder="请输入邮箱" class="form-input" />
       </div>
       <div class="form-group verification-group">
-        <label class="input-label verification-label">验证码</label>
+        <label class="input-label verification-label">验&ensp;证&ensp;码</label>
         <input type="text" v-model="verificationCode" placeholder="请输入验证码" class="form-input verification-input" />
         <button type="button" @click="sendVerificationCode" :disabled="sendingCode" class="send-code-btn">{{ sendingCode ? '发送中...' : sendingCode || countdown > 0 ? `${countdown}秒后重新发送` : '发送验证码' }}</button>
       </div>
       <div class="form-group">
-        <label class="input-label">新密码</label>
+        <label class="input-label">新&ensp;密&ensp;码</label>
         <input type="password" v-model="newPassword" placeholder="请输入新密码" class="form-input" />
       </div>
       <div class="form-group">
-        <label class="input-label">确认新密码</label>
+        <label class="input-label">确认密码</label>
         <input type="password" v-model="confirmPassword" placeholder="请确认新密码" class="form-input" />
       </div>
       <button type="submit" class="login-btn" :disabled="sendingReset">{{ sendingReset ? '重置中...' : '重置密码' }}</button>
@@ -193,6 +193,8 @@ defineExpose({
 .form-group {
   margin-bottom: 20px;
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .verification-group {
@@ -200,12 +202,10 @@ defineExpose({
   gap: 10px;
 }
 
-.verification-input {
-  flex: 1;
-}
-
 .send-code-btn {
-  padding: 0 15px;
+  width:23%;
+  height:40px;
+  padding: 0 0px;
   background-color: #4c6ef5;
   color: white;
   border: none;
@@ -213,6 +213,8 @@ defineExpose({
   font-size: 14px;
   cursor: pointer;
   white-space: nowrap;
+  text-align: center;
+  margin-right: 0;
 }
 
 .send-code-btn:disabled {
@@ -221,7 +223,7 @@ defineExpose({
 }
 
 .form-input {
-  width: 100%;
+  width: calc(100% - 90px);
   padding: 12px 15px;
   border: none;
   border-radius: 5px;
@@ -229,16 +231,27 @@ defineExpose({
   color: white;
   font-size: 16px;
   box-sizing: border-box;
-  margin-top: 5px;
+  margin-top: 0;
+  margin-left: 0;
+  margin-right: 0;
+  display: block;
+  text-align: left;
 }
 
+
+
 .input-label {
+  width: 80px;
   color: white;
   font-size: 14px;
   font-weight: 500;
-  display: block;
+  margin-right: 10px;
+  margin-right:right;
 }
-
+.verification-input {
+  width: 48%;
+  flex: none;
+}
 .verification-label {
   display: block;
   margin-bottom: 5px;

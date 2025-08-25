@@ -68,6 +68,16 @@ export default [
     }
   },
   {
+    path: '/',
+    name: 'Home1',
+    component: () => import('../../views/home/Home.vue'),
+    meta: {
+      layout: 'main',
+      requiresAuth: false,
+      title: '首页'
+    }
+  },
+  {
     path: '/404',
     name: 'NotFound',
     component: () => import('../../views/error/NotFound.vue'),
@@ -78,8 +88,8 @@ export default [
   },
 
   // 重定向：默认访问首页
-  {
-    path: '/',
-    redirect: '/home'
-  }
+//   {
+//     path: '/',
+//     redirect: '/home'
+//   }
 ];

@@ -5,19 +5,19 @@
     <form class="login-form" @submit.prevent="handleRegister">
       <h2 class="form-title">建设工程检查报告管理系统</h2>
       <div class="form-group">
-        <label class="input-label">用户名</label>
+        <label class="input-label">用&ensp;户&ensp;名</label>
         <input type="text" v-model="username" placeholder="请输入用户名" class="form-input" />      
       </div>
       <div class="form-group">
-        <label class="input-label">昵称</label>
+        <label class="input-label">昵&ensp;&ensp;&ensp;&ensp;称</label>
         <input type="text" v-model="nickname" placeholder="请输入昵称" class="form-input" />      
       </div>
       <div class="form-group">
-        <label class="input-label">邮箱</label>
+        <label class="input-label">邮&ensp;&ensp;&ensp;&ensp;箱</label>
         <input type="email" v-model="email" placeholder="请输入邮箱" class="form-input" />      
       </div>
       <div class="form-group">
-        <label class="input-label">密码</label>
+        <label class="input-label">密&ensp;&ensp;&ensp;&ensp;码</label>
         <input type="password" v-model="password" placeholder="请输入密码" class="form-input" />
       </div>
       <div class="form-group">
@@ -25,7 +25,7 @@
         <input type="password" v-model="confirmPassword" placeholder="请确认密码" class="form-input" />
       </div>
       <div class="form-group verification-group">
-        <label class="input-label verification-label">验证码</label>
+        <label class="input-label verification-label">验&ensp;证&ensp;码</label>
         <input type="text" v-model="verificationCode" placeholder="请输入验证码" class="form-input verification-input" />
         <button type="button" @click="sendVerificationCode" :disabled="sendingCode" class="send-code-btn">{{ sendingCode ? '发送中...' : '发送验证码' }}</button>
       </div>
@@ -104,7 +104,7 @@ const handleRegister = async () => {
     // 调用服务层注册方法
     const success = await userService.register(registerForm);
     if (success) {
-      router.push('/login');
+      handleReturnLogin();
     }
   } catch (error) {
     console.error('注册异常', error);
@@ -203,8 +203,31 @@ defineExpose({
 .form-group {
   margin-bottom: 20px;
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
+.input-label {
+  width: 20%;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  margin-left: 0px;
+  text-align: right;
+  box-sizing: border-box;
+  flex: none;
+}
+.input-label.verification-label{
+  
+  width: 10%;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  margin-left: 5%;
+  text-align: left;
+  box-sizing: border-box;
+  flex: none;
+}
 .verification-group {
   display: flex;
   gap: 10px;
@@ -215,7 +238,9 @@ defineExpose({
 }
 
 .send-code-btn {
-  padding: 0 15px;
+  width:23%;
+  height:40px;
+  padding: 0 0px;
   background-color: #4c6ef5;
   color: white;
   border: none;
@@ -223,15 +248,22 @@ defineExpose({
   font-size: 14px;
   cursor: pointer;
   white-space: nowrap;
+  text-align: center;
+  margin-right: 0;
+}
+.form-input.verification-input{
+  width: 45%;
+  flex: none;
 }
 
-.send-code-btn:disabled {
+
+.form-input.verification-input:disabled {
   background-color: #495057;
   cursor: not-allowed;
 }
 
 .form-input {
-  width: 100%;
+  width: 70%;
   padding: 12px 15px;
   border: none;
   border-radius: 5px;
@@ -240,14 +272,23 @@ defineExpose({
   font-size: 16px;
   box-sizing: border-box;
   margin-top: 5px;
+  margin-right: 0px;
+  margin-left: auto;
+  display: block;
 }
 
 .input-label {
+  width: 20%;
   color: white;
   font-size: 14px;
   font-weight: 500;
+  margin-left: 0px;
+  padding-top: 12px;
   display: block;
+  text-align: right;
+  box-sizing: border-box;
 }
+
 
 .verification-label {
   display: block;

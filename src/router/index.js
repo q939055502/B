@@ -17,6 +17,7 @@ import {
 
 // 4. 创建路由实例（整个应用的路由核心对象）
 const router = createRouter({
+    mode: 'history',  // 必须有此配置
   // 路由模式：
   // - createWebHistory：使用 HTML5 History 模式（URL 无 #）
   // - createWebHashHistory：使用哈希模式（URL 带 #）

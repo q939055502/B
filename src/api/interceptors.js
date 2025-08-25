@@ -6,7 +6,16 @@ import {
   removeToken, 
   removeRefresh_token 
 } from '../utils/auth';
-import { useUserStore } from '../stores/userStore';
+// 延迟导入 useUserStore 以避免循环依赖
+let useUserStore;
+// 在需要时动态导入
+const getUseUserStore = async () => {
+  if (!useUserStore) {
+    const module = await import('../stores/userStore');
+    useUserStore = module.useUserStore;
+  }
+  return useUserStore;
+};
 import { userAPI } from './userAPI';
 import { handleError } from '../utils/error';
 import { 
@@ -118,7 +127,7 @@ export const requestInterceptor = (config) => {
  * @returns {Object} - 处理后的响应数据
  * @throws {Error} - 当业务请求失败时抛出错误
  */
-export const responseSuccessInterceptor = (response) => {
+export const responseSuccessInterceptor = async (response) => {
   let res = response;
   console.log('响应参数++--:', res);
 
@@ -130,7 +139,8 @@ export const responseSuccessInterceptor = (response) => {
     // 更新本地存储中的令牌
     setToken({access_token: res.data.access_token,refresh_token: res.data.refresh_token});
     // 同时更新userStore中的令牌状态
-    const userStore = useUserStore();
+    const useStore = await getUseUserStore();
+    const userStore = useStore();
     userStore.access_token = res.data.access_token;
     userStore.refresh_token = res.data.refresh_token;
   }
