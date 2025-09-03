@@ -50,7 +50,7 @@
             <td>{{ user.id }}</td>
             <td>{{ user.nickname || user.username }}</td>
             <td>{{ user.email }}</td>
-            <td>{{ getUserRoles(user.roles) }}</td>
+            <td>{{ getUserRoles(user.roles || user.role) }}</td>
             <td>
               <span :class="getStatusClass(user.status)">
                 {{ getStatusText(user.status) }}
@@ -214,8 +214,25 @@ const totalPages = computed(() => {
 
 // 根据角色数组获取角色名称列表
 const getUserRoles = (roles) => {
-  if (!roles || !Array.isArray(roles) || roles.length === 0) return '-';
-  return roles.map(role => role.name || role).join(', ');
+  if (!roles) return '-';
+  
+  // 处理数组形式的角色数据
+  if (Array.isArray(roles)) {
+    if (roles.length === 0) return '-';
+    return roles.map(role => role.name || role).join(', ');
+  }
+  
+  // 如果是字符串类型的角色名称，直接返回
+  if (typeof roles === 'string') {
+    return roles;
+  }
+  
+  // 处理对象形式的角色数据（如果有name属性）
+  if (roles && typeof roles === 'object' && roles.name) {
+    return roles.name;
+  }
+  
+  return '-';
 };
 
 // 获取用户状态文本

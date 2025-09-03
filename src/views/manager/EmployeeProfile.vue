@@ -39,7 +39,7 @@
           <div class="name-section">
             <h1 class="full-name">{{ employee.nickname || employee.username }}</h1>
             <span class="username">{{ employee.username }}</span>
-            <span class="user-id">#{{ employee.id }}</span>
+            <!-- <span class="user-id">#{{ employee.id }}</span> -->
           </div>
           
           <div class="position-info">
@@ -56,6 +56,14 @@
             <ElIcon name="UserFilled" /> 个人信息
           </h2>
           <div class="info-grid">
+            <div class="info-item" @click.stop="startEditing('nickname', employee.nickname)">
+  <span class="label">昵称：</span>
+  <span v-if="!isFieldEditing('nickname')" class="value">{{ employee.nickname || '未设置' }}</span>
+  <div v-else class="edit-container" @click.stop>
+    <ElInput v-model="editValues.nickname" placeholder="请输入昵称" size="small" @blur="saveEditing" />
+    
+  </div>
+</div>
             <div class="info-item" @click.stop="startEditing('gender', employee.gender)">
   <span class="label">性别：</span>
   <span v-if="!isFieldEditing('gender')" class="value">{{ formatGender(employee.gender) }}</span>
