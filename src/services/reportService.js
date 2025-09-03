@@ -1,8 +1,9 @@
 // 导入必要的依赖
 import { reportService as apiReportService } from '../api/reportAPI';
-import { HTTP_200_OK } from '../utils/status_codes.js';
+import { HTTP_200_OK, HTTP_500_INTERNAL_SERVER_ERROR } from '../utils/status_codes.js';
 import { useReportStore } from '../stores/reportStore';
 import { ElMessage } from 'element-plus';
+import { excelToDictArray } from '../utils/excelParser';
 
 // 报告服务类
 class ReportService {
@@ -60,46 +61,6 @@ class ReportService {
     }
   }
 
-  // 全量获取报告列表
-  async handleGetAllReportsList(options = {}) {
-    try {
-      this.store.loading = true;
-      this.store.error = null;
-
-      // 参数处理：如果有额外参数需要处理，可以在这里添加
-      const params = { ...options };
-
-      const res = await apiReportService.apiGetAllReportsList(params);
-
-      if (res.code === HTTP_200_OK) {
-        // 直接更新store状态
-        this.store.tableData = res.data?.reports || [];
-        this.store.total = res.data?.pagination?.total_items || res.data?.reports?.length || 0;
-        this.store.currentPage = 1;
-        this.store.pageSize = res.data?.pagination?.per_page || 10;
-
-        return {
-          success: true,
-          data: res.data
-        };
-      } else {
-        this.store.error = res.data || '获取全量报告列表失败';
-        return {
-          success: false,
-          error: this.store.error
-        };
-      }
-    } catch (err) {
-      console.error('获取全量报告列表失败', err);
-      this.store.error = err.message || '获取全量报告列表失败';
-      return {
-        success: false,
-        error: this.store.error
-      };
-    } finally {
-      this.store.loading = false;
-    }
-  }
 
   // 获取报告总数
   async handleGetReportsTotal() {
@@ -154,19 +115,26 @@ class ReportService {
       const res = await apiReportService.addReport(validatedData);
       console.log(res)
       console.log('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++新增报告');
-      if (res.code === HTTP_200_OK) {
-        console.log('新增报告成功', res.report);
+      // 检查响应状态码，与批量创建报告保持一致
+      if (res.data.code === HTTP_200_OK) {
+        console.log('新增报告成功', res.data.data);
         // 新增成功后刷新列表
         await this.handleGetReportsList();
         return {
           success: true,
-          report: res.report
+          code: res.data.code,
+          message: res.data.message || '新增报告成功',
+          data: {
+            report: res.data.data
+          }
         };
       } else {
-        this.store.error = res.data || '新增报告失败';
+        this.store.error = res.data.message || '新增报告失败';
         return {
           success: false,
-          error: this.store.error
+          code: res.data.code || HTTP_500_INTERNAL_SERVER_ERROR,
+          message: this.store.error,
+          data: null
         };
       }
     } catch (err) {
@@ -174,7 +142,9 @@ class ReportService {
       this.store.error = err.message || '新增报告失败';
       return {
         success: false,
-        error: this.store.error
+        code: HTTP_500_INTERNAL_SERVER_ERROR,
+        message: this.store.error,
+        data: null
       };
     } finally {
       this.store.loading = false;
@@ -304,6 +274,253 @@ class ReportService {
       return {
         success: false,
         error: this.store.error
+      };
+    } finally {
+      this.store.loading = false;
+    }
+  }
+
+  // 根据报告编号数组获取报告数据
+  async handleGetReportsByCodes(reportCodes) {
+    try {
+      this.store.loading = true;
+      this.store.error = null;
+
+      // 参数校验
+      if (!Array.isArray(reportCodes) || reportCodes.length === 0) {
+        throw new Error('报告编号数组不能为空');
+      }
+
+      // 调用API服务
+      const res = await apiReportService.getReportsByCodes(reportCodes);
+
+      if (res.data.code === HTTP_200_OK) {
+        console.log('根据报告编号获取报告数据成功', res.data.data);
+        return {
+          success: true,
+          data: res.data.data
+        };
+      } else {
+        this.store.error = res.data.message || '根据报告编号获取报告数据失败';
+        return {
+          success: false,
+          message: this.store.error
+        };
+      }
+    } catch (err) {
+      console.error('根据报告编号获取报告数据失败', err);
+      this.store.error = err.message || '根据报告编号获取报告数据失败';
+      return {
+        success: false,
+        message: this.store.error
+      };
+    } finally {
+      this.store.loading = false;
+    }
+  }
+
+  // 从Excel批量新增报告
+  async handleBatchAddReportsFromExcel(file) {
+    try {
+      this.store.loading = true;
+      this.store.error = null;
+
+      // 参数校验
+      if (!file) {
+        throw new Error('未提供Excel文件');
+      }
+
+      // 使用excelToDictArray解析文件数据
+      console.log('开始解析Excel文件...');
+      const excelData = await excelToDictArray(file, {
+        useEnglishKeys: true,
+        sheetName: null, // 使用第一个工作表
+        formatDates: true
+      });
+
+      // 打印解析后的数据
+      console.log('解析后的Excel数据:', excelData);
+
+      // 字段验证：检查必需字段是否为空
+      const requiredFields = [
+        'report_code', // 报告编号
+        'project_name', // 工程名称
+        'inspection_type', // 检验类型
+        'inspection_items', // 检测项目
+        'inspection_object', // 检测对象
+        'inspection_unit', // 检测单位
+        'client_unit', // 委托单位
+        'report_date', // 报告日期
+        'inspection_conclusion',//检测结果
+      ];
+
+      // 验证所有数据行
+      const invalidRows = [];
+      const validatedData = [];
+
+      excelData.forEach((item, index) => {
+        if (typeof item !== 'object' || item === null) {
+          invalidRows.push({ row: index + 1, reason: '数据不是有效对象' });
+          return;
+        }
+
+        // 检查所有必需字段
+        const missingFields = [];
+        for (const field of requiredFields) {
+          if (item[field] === undefined || item[field] === null || item[field] === '') {
+            missingFields.push(field);
+          }
+        }
+
+        if (missingFields.length > 0) {
+          invalidRows.push({
+            row: index + 1,
+            reason: `缺少必需字段: ${missingFields.join(', ')}`,
+            data: item
+          });
+        } else {
+          validatedData.push(item);
+        }
+      });
+
+      // 如果有任何无效行，抛出错误
+      if (invalidRows.length > 0) {
+        console.warn('无效数据行:', invalidRows);
+        throw new Error(`发现${invalidRows.length}行无效数据，请检查Excel文件。第一处错误: 第${invalidRows[0].row}行 - ${invalidRows[0].reason}`);
+      }
+
+      if (validatedData.length === 0) {
+        throw new Error('没有有效的报告数据');
+      }
+
+      // 调用API批量添加报告
+      // 封装数据为reports_data字段
+      const res = await apiReportService.batchAddReports({ reports_data: validatedData });
+      if (res.data.code === HTTP_200_OK) {
+        console.log('批量新增报告成功', res.data);
+        // 新增成功后刷新列表
+        await this.handleGetReportsList();
+        return {
+          success: true,
+          message: res.data.message,
+          data: res.data
+        };
+      } else {
+        this.store.error = res.data || '批量新增报告失败';
+        return {
+          success: false,
+          error: this.store.error
+        };
+      }
+    } catch (err) {
+      console.error('批量新增报告失败', err);
+      this.store.error = err.message || '批量新增报告失败';
+      return {
+        success: false,
+        error: this.store.error
+      };
+    } finally {
+      this.store.loading = false;
+    }
+  }
+
+  // 从Excel批量更新报告
+  async handleBatchUpdateReportsFromExcel(file) {
+    try {
+      this.store.loading = true;
+      this.store.error = null;
+
+      // 参数校验
+      if (!file) {
+        throw new Error('未提供Excel文件');
+      }
+
+      // 使用excelToDictArray解析文件数据
+      console.log('开始解析Excel文件...');
+      const excelData = await excelToDictArray(file, {
+        useEnglishKeys: true,
+        sheetName: null, // 使用第一个工作表
+        formatDates: true
+      });
+
+      // 打印解析后的数据
+      console.log('解析后的Excel数据:', excelData);
+
+      // 字段验证：检查必需字段是否为空
+      const requiredFields = [
+        'report_code', // 报告编号 (必需，用于识别要更新的报告)
+        // 其他需要的字段根据实际需求添加
+      ];
+
+      // 验证所有数据行
+      const invalidRows = [];
+      const validatedData = [];
+
+      excelData.forEach((item, index) => {
+        if (typeof item !== 'object' || item === null) {
+          invalidRows.push({ row: index + 1, reason: '数据不是有效对象' });
+          return;
+        }
+
+        // 检查所有必需字段
+        const missingFields = [];
+        for (const field of requiredFields) {
+          if (item[field] === undefined || item[field] === null || item[field] === '') {
+            missingFields.push(field);
+          }
+        }
+
+        if (missingFields.length > 0) {
+          invalidRows.push({
+            row: index + 1,
+            reason: `缺少必需字段: ${missingFields.join(', ')}`,
+            data: item
+          });
+        } else {
+          validatedData.push(item);
+        }
+      });
+
+      // 如果有任何无效行，抛出错误
+      if (invalidRows.length > 0) {
+        console.warn('无效数据行:', invalidRows);
+        throw new Error(`发现${invalidRows.length}行无效数据，请检查Excel文件。第一处错误: 第${invalidRows[0].row}行 - ${invalidRows[0].reason}`);
+      }
+
+      // 调用API批量更新报告
+      console.log('开始调用API批量更新报告...');
+      const res = await apiReportService.batchUpdateReports({
+        reports_data: validatedData
+      });
+
+      // 检查响应状态
+      if (res.data.code === HTTP_200_OK) {
+        console.log('批量更新报告成功', res.data);
+        // 刷新报告列表
+        await this.handleGetReportsList();
+        return {
+          success: true,
+          code: res.data.code,
+          message: res.data.message || '批量更新报告成功',
+          data: res.data.data
+        };
+      } else {
+        this.store.error = res.data.message || '批量更新报告失败';
+        return {
+          success: false,
+          code: res.data.code || HTTP_500_INTERNAL_SERVER_ERROR,
+          message: this.store.error,
+          data: null
+        };
+      }
+    } catch (err) {
+      console.error('批量更新报告失败', err);
+      this.store.error = err.message || '批量更新报告失败';
+      return {
+        success: false,
+        code: HTTP_500_INTERNAL_SERVER_ERROR,
+        message: this.store.error,
+        data: null
       };
     } finally {
       this.store.loading = false;

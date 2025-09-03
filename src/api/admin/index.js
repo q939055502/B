@@ -61,7 +61,21 @@ export const adminService = {
     return request.post(`/api/admin/update_staff_permissions/${staffId}`, params);
   }, // 更新人员权限
 
+  updateStaffPassword: (passwordData) => {
+    return request.post('/api/admin/update_staff_password', passwordData);
+  }, // 修改用户密码
+
   createRole: (roleData) => {
-    return request.post('/api/admin/roles', roleData);
+    return request.post('/api/admin/create_role', roleData);
   }, // 创建角色
-};
+
+  deleteRole: (roleId) => {
+    return request.delete(`/api/admin/delete_role/${roleId}`);
+  }, // 删除角色
+
+  updateRolePermissions: (roleId, permissionData) => {
+    // 后端接口期望的格式是 { permission_ids: [] }
+    const formattedData = { permission_ids: permissionData.permission_ids || [] };
+    return request.post(`/api/admin/update_role_permissions/${roleId}`, formattedData);
+  }, // 更新角色权限
+}

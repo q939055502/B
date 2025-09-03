@@ -196,6 +196,14 @@ export const responseSuccessInterceptor = async (response) => {
  */
 export const responseErrorInterceptor = (error) => {
   // 处理 401 错误（未授权或 token 过期）
+  
+  // 如果是用户名或密码错误，直接返回错误给业务层，不进行token刷新
+  if (error.response.data.message === '用户名或密码错误') {
+    // handleError(error);
+    // return Promise.reject(error);
+    return error.response;
+  }
+
   if (error.response && error.response.status === HTTP_401_UNAUTHORIZED) {
     const originalRequest = error.config;
     const refreshToken = getRefresh_token();

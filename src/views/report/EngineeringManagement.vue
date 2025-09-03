@@ -87,7 +87,7 @@ const columns = ref([
   { en: 'test_items', zh: '检测项详情', visible: false, minWidth: '200px', noWrap: false },
   { en: 'inspection_quantity', zh: '检测数量', visible: true, minWidth: '100px', noAutoSize: true },
   { en: 'measurement_unit', zh: '计量单位', visible: true, minWidth: '100px' },
-  { en: 'inspection_conclusion', zh: '检测结论', visible: true, minWidth: '150px' },
+  { en: 'inspection_conclusion', zh: '检测结果', visible: true, minWidth: '150px' },
   { en: 'conclusion_description', zh: '结论描述', visible: false, minWidth: '200px', noWrap: false ,defaultVisible: false},
   { en: 'is_recheck', zh: '是否复检', visible: true, minWidth: '100px', noAutoSize: true },
   { en: 'sampling_method', zh: '抽样方式', visible: false, minWidth: '120px' },

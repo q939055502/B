@@ -3,7 +3,11 @@
 
 
 // 动态路由：根据用户权限加载
+import managerRoutes from './manager';
+
 export default [
+  // 合并管理人员相关路由
+  ...managerRoutes,
   // 所有登录用户都能访问的路由（不限制权限）
 
   // 登录页面（不需要认证）

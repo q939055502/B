@@ -15,6 +15,7 @@
           background-color="#F2F3F5"
           :unique-opened="true"
           :collapse-transition="false"
+          router
         >
           <el-menu-item index="/manager/users">
             <template #title>
@@ -22,7 +23,7 @@
               <span>人员管理</span>
             </template>
           </el-menu-item>
-          <el-menu-item index="/manager/roles" v-if="false">
+          <el-menu-item index="/manager/roles">
             <template #title>
               <i class="pi pi-key mr-2"></i>
               <span>角色管理</span>

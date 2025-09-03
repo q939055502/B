@@ -426,14 +426,8 @@
                 </select>
               </FormItem>
               
-              <FormItem label="检测结论" required>
-                  <select v-model="formData.inspection_conclusion" class="form-select" required ref="inspectionConclusionRef">
-                    <option value="">请选择</option>
-                    <option value="合格">合格</option>
-                    <option value="不合格">不合格</option>
-                    <option value="待确认">待确认</option>
-                    <option value="异常">异常</option>
-                  </select>
+              <FormItem label="检测结果" required>
+                  <input v-model="formData.inspection_conclusion" class="form-input" required ref="inspectionConclusionRef" placeholder="请输入检测结果">
                 </FormItem>
               
               <FormItem label="结论描述" span="2">
@@ -586,7 +580,7 @@ const inspectionUnitRef = ref(null);
       return;
     }
     if (!formData.value.inspection_conclusion) {
-      alert('请选择检测结论');
+      alert('请选择检测结果');
       inspectionConclusionRef.value?.focus();
       return;
     }

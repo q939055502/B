@@ -69,6 +69,15 @@ export default [
           title: '权限分配',
           permission: { resource: 'user',action: 'update',scope: 'all'}
         }
+      },
+      {
+        path: 'roles',
+        name: 'RoleManagement',
+        component: () => import('@/views/manager/RoleManagement.vue'),
+        meta: {
+          requiresAuth: true,
+          title: '角色管理'
+        }
       }
     ]
   }

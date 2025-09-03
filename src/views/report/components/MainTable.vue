@@ -5,11 +5,29 @@
       <button class="btn-primary" @click="$emit('add-item')" :disabled="!hasCreatePermission">
         <i class="fa fa-plus"></i> 新增
       </button>
+
+      <button class="btn-primary" @click="downloadTemplate">
+        <i class="fa fa-download"></i> 下载模板
+      </button>
+
       
+
+      <button class="btn-primary" @click="batchAddReport" :disabled="!hasCreatePermission">
+        <i class="fa fa-file-text-o"></i> 批量新增报告
+      </button>
+
+      <button class="btn-primary" @click="batchUpdateReport" :disabled="!hasUpdatePermission">
+        <i class="fa fa-file-excel-o"></i> 批量更新报告
+      </button>
+
       <button class="btn-primary" v-if="selectedIds.length" @click="handleBatchDownloadQRCode">
         <i class="fa fa-qrcode"></i> 批量下载二维码
       </button>
       
+      <button class="btn-primary" v-if="selectedIds.length" @click="handleBatchExportReportData">
+        <i class="fa fa-file-excel-o"></i> 批量导出报告数据
+      </button>
+
       <button class="btn-danger" v-if="false&&selectedIds.length" @click="handleBatchDelete">
         <i class="fa fa-trash"></i> 批量删除
       </button>
@@ -229,15 +247,21 @@
 
 <script setup>
 import { ref, computed, watchEffect } from 'vue';
+import { getReportService } from '@/services/reportService';
+const reportService = getReportService();
 import { Search } from '@element-plus/icons-vue';
 import ColumnSetting from './ColumnSetting.vue';
 import { ElIcon, ElMessageBox } from 'element-plus';
 import { Check, Close } from '@element-plus/icons-vue';
 import QRCode from 'qrcode';
 import JSZip from 'jszip';
+import { dictArrayToExcel } from '@/utils/excelParser';
 import { usePermission } from '@/utils/usePermission';
 const { hasPermission } = usePermission();
-const hasCreatePermission = hasPermission({ resource: 'inspection_report', action: 'create' });
+// 使用computed确保权限检查响应式更新
+const hasCreatePermission = computed(() => hasPermission({ resource: 'inspection_report', action: 'create' }));
+// 批量更新权限检查 - 只要有编辑权限就显示，不区分scope
+const hasUpdatePermission = computed(() => hasPermission({ resource: 'inspection_report', action: 'edit' }));
 
 // 编辑权限检查函数
 const hasEditPermission = (row) => {
@@ -487,6 +511,88 @@ const formatDate = (dateString) => {
   }).replace(/\//g, '-');
 };
 
+// 批量新增报告方法
+const batchAddReport = async () => {
+  try {
+    // 创建文件输入元素
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.xlsx, .xls';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+
+    // 触发文件选择对话框
+    fileInput.click();
+
+    // 等待用户选择文件
+    const filePromise = new Promise((resolve) => {
+      fileInput.onchange = (e) => resolve(e.target.files[0]);
+    });
+
+    const selectedFile = await filePromise;
+    if (!selectedFile) {
+      console.log('未选择文件');
+      return;
+    }
+
+    // 调用reportService的批量新增方法
+    const result = await reportService.handleBatchAddReportsFromExcel(selectedFile);
+    if (result.success) {
+      ElMessage.success(result.message)
+      // 刷新表格数据
+      handleSearch();
+    } else {
+      ElMessage.error('失败',result.message);
+    }
+  } catch (error) {
+    console.error('批量新增报告异常', error);
+    ElMessageBox.alert('批量新增报告失败: ' + error.message, '错误', {
+      type: 'error'
+    });
+  }
+}
+
+// 批量更新报告方法
+const batchUpdateReport = async () => {
+  try {
+    // 创建文件输入元素
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.xlsx, .xls';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+
+    // 触发文件选择对话框
+    fileInput.click();
+
+    // 等待用户选择文件
+    const filePromise = new Promise((resolve) => {
+      fileInput.onchange = (e) => resolve(e.target.files[0]);
+    });
+
+    const selectedFile = await filePromise;
+    if (!selectedFile) {
+      console.log('未选择文件');
+      return;
+    }
+
+    // 调用reportService的批量更新方法
+    const result = await reportService.handleBatchUpdateReportsFromExcel(selectedFile);
+    if (result.success) {
+      ElMessage.success(result.message)
+      // 刷新表格数据
+      handleSearch();
+    } else {
+      ElMessage.error('失败',result.message);
+    }
+  } catch (error) {
+    console.error('批量更新报告异常', error);
+    ElMessageBox.alert('批量更新报告失败: ' + error.message, '错误', {
+      type: 'error'
+    });
+  }
+}
+
 // 根据报告状态获取样式类
 const getStatusClass = (status) => {
   // 处理英文状态值
@@ -542,6 +648,74 @@ const handleDeleteItem = async (reportCode, row) => {
     handleSearch();
   } catch (error) {
     // 用户取消删除或关闭对话框
+  }
+};
+
+// 批量导出报告数据
+const handleBatchExportReportData = async () => {
+  try {
+    // 检查是否有选中的数据
+    if (!selectedIds.value.length) {
+      ElMessage.warning('请先选择要导出的报告数据');
+      return;
+    }
+
+    // 调用reportService的方法获取报告数据
+    const result = await reportService.handleGetReportsByCodes(selectedIds.value);
+    if (result.success) {
+      ElMessage.success('获取报告数据成功');
+      console.log('获取到的报告数据:', result.data);
+
+      // 加载模板文件
+      try {
+        const response = await fetch('/模板.xlsx');
+        if (!response.ok) {
+          throw new Error('加载模板文件失败');
+        }
+        const blob = await response.blob();
+        const templateFile = new File([blob], '模板.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+        // 调用dictArrayToExcel方法导出数据
+        // 使用result.data.reports作为数据源，这是包含实际报告数据的数组
+        await dictArrayToExcel(result.data.reports, {
+          filename: '导出报告数据.xlsx',
+          templateFile: templateFile,
+          sheetName: '报告数据'
+        });
+        // 需要提供下载
+        ElMessage.success('导出Excel成功');
+      } catch (templateError) {
+        console.error('处理模板文件或导出Excel失败', templateError);
+        ElMessage.error('导出Excel失败: ' + templateError.message);
+      }
+    } else {
+      ElMessage.error(result.message || '获取报告数据失败');
+    }
+  } catch (error) {
+    console.error('获取报告数据异常', error);
+    ElMessage.error('获取报告数据失败: ' + error.message);
+  }
+}
+
+// 下载模板文件
+const downloadTemplate = () => {
+  try {
+    // 创建下载链接
+    const link = document.createElement('a');
+    link.href = '/填写模板.xlsx';
+    link.download = '填写模板.xlsx';
+    document.body.appendChild(link);
+    
+    // 触发下载
+    link.click();
+    
+    // 清理
+    document.body.removeChild(link);
+    
+    ElMessage.success('模板下载成功');
+  } catch (error) {
+    console.error('下载模板失败:', error);
+    ElMessage.error('下载模板失败: ' + error.message);
   }
 };
 

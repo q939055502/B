@@ -23,8 +23,8 @@ const router = createRouter({
   // - createWebHashHistory：使用哈希模式（URL 带 #）
   history: createWebHistory(import.meta.env.BASE_URL),
   
-  // 初始路由配置：包含静态路由和管理人员路由
-  routes: [...staticRoutes, ...managerRoutes,...dynamicRoutes],
+  // 初始路由配置：包含静态路由和动态路由
+  routes: [...staticRoutes, ...dynamicRoutes],
 
   
   // 可选：配置路由跳转时的滚动行为（进入新页面自动回到顶部）

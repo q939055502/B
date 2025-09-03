@@ -24,16 +24,16 @@ getReportList: (params) => {
     });
   },
 
-  /**
-   * 获取所有报告列表
-   * @param {Object} [params={}] - 查询参数
-   * @returns {Promise<Object>} - 所有报告数据
-   */
-apiGetAllReportsList: (params = {}) => {
-    return request.get('/api/report/get-all-reports', {
-      params
-    });
-  },
+//   /**
+//    * 获取所有报告列表
+//    * @param {Object} [params={}] - 查询参数
+//    * @returns {Promise<Object>} - 所有报告数据
+//    */
+// apiGetAllReportsList: (params = {}) => {
+//     return request.get('/api/report/get-all-reports', {
+//       params
+//     });
+//   },
 
   /**
    * 获取报告总数
@@ -89,5 +89,37 @@ batchDeleteReports: (reportCodes) => {
     return request.delete('/api/report/batch-delete-reports', {
       data: { report_codes: reportCodes }
     });
+  },
+
+  /**
+   * 批量新增报告
+   * @param {Array<Object>} reportsData - 报告数据数组
+   * @returns {Promise<Object>} - 批量新增结果
+   */
+batchAddReports: (reportsData) => {
+    return request.post('/api/report/batch-add-reports', reportsData);
+  },
+
+  /**
+   * 批量更新报告
+   * @param {Array<Object>} reportsData - 包含报告编号和更新数据的对象数组
+   * @returns {Promise<Object>} - 批量更新结果
+   */
+batchUpdateReports: (reportsData) => {
+    return request.put('/api/report/batch-update-reports', reportsData);
+  },
+
+  /**
+   * 根据报告编号数组获取报告数据
+   * @param {Array<string>} reportCodes - 报告编号数组
+   * @returns {Promise<Object>} - 报告数据
+   */
+getReportsByCodes: (reportCodes) => {
+    return request.post('/api/report/get-reports-by-codes', {
+      report_codes: reportCodes
+    });
   }
 };
+
+
+

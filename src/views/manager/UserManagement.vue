@@ -59,7 +59,7 @@
             <td>{{ DataUtils.formatDate(user.created_at) }}</td>
             <td class="action-buttons">
               <button @click="handleViewUser(user.id)" class="view-btn">查看编辑</button>
-              <!-- <button @click="handleEditUser(user.id)" class="edit-btn">编辑</button> -->
+              <button @click="handleUpdatePassword(user.id)" class="password-btn">修改密码</button>
               <button @click="handleAssignPermission(user.id)" class="permission-btn">分配权限</button>
               <button @click="handleAssignRole(user.id)" class="role-btn">分配角色</button>
               <button @click="handleDeleteUser(user.id)" class="delete-btn">删除</button>
@@ -118,6 +118,44 @@
     >
       <EmployeeProfile :userId="selectedUserId" />
     </el-dialog>
+
+    <!-- 修改密码的模态框 -->
+    <el-dialog
+      v-model="passwordDialogVisible"
+      title="修改密码"
+      width="40%"
+      :destroy-on-close="true"
+    >
+      <div class="password-form">
+        <div class="form-group">
+          <label class="form-label">新密码 <span class="required">*</span></label>
+          <input
+            type="password"
+            v-model="newPassword"
+            placeholder="请输入新密码（至少6位）"
+            class="form-input"
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label">确认新密码 <span class="required">*</span></label>
+          <input
+            type="password"
+            v-model="confirmPassword"
+            placeholder="请再次输入新密码"
+            class="form-input"
+          />
+        </div>
+        <div class="form-tips">
+          <span>密码长度至少6位</span>
+        </div>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <button type="button" @click="handlePasswordDialogClose" class="cancel-btn">取消</button>
+          <button type="button" @click="handleSubmitPassword" class="submit-btn">确定</button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -162,6 +200,10 @@ const roleDialogVisible = ref(false);
 const selectedUserId = ref('');
 // 用户详情对话框变量
 const profileDialogVisible = ref(false);
+// 修改密码对话框变量
+const passwordDialogVisible = ref(false);
+const newPassword = ref('');
+const confirmPassword = ref('');
 
 const router = useRouter();
 
@@ -265,6 +307,46 @@ const handleViewUser = (userId) => {
   selectedUserId.value = String(userId);
   console.log(userId, 'handleViewUser+++++++++++++++++++++++++++++');
   profileDialogVisible.value = true;
+};
+
+// 打开修改密码对话框
+const handleUpdatePassword = (userId) => {
+  selectedUserId.value = String(userId);
+  newPassword.value = '';
+  confirmPassword.value = '';
+  passwordDialogVisible.value = true;
+};
+
+// 关闭修改密码对话框
+const handlePasswordDialogClose = () => {
+  passwordDialogVisible.value = false;
+};
+
+// 提交修改密码
+const handleSubmitPassword = async () => {
+  try {
+    // 表单验证
+    if (!newPassword.value || newPassword.value.length < 6) {
+      ElMessage.error('密码长度不能少于6位');
+      return;
+    }
+    
+    if (newPassword.value !== confirmPassword.value) {
+      ElMessage.error('两次输入的密码不一致');
+      return;
+    }
+    
+    // 调用服务层修改密码
+    const isSuccess = await adminService.updateUserPassword(selectedUserId.value, newPassword.value);
+    
+    if (isSuccess) {
+      ElMessage.success('密码修改成功');
+      passwordDialogVisible.value = false;
+    }
+  } catch (error) {
+    console.error('修改密码失败:', error);
+    ElMessage.error('修改密码失败: ' + (error.message || '未知错误'));
+  }
 };
 
 // 删除人员
@@ -515,6 +597,79 @@ button:disabled {
   color: #666;
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+/* 修改密码按钮样式 */
+.password-btn {
+  background-color: #3b82f6;
+  color: white;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* 密码表单样式 */
+.password-form {
+  padding: 20px 0;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+}
+
+.required {
+  color: #ef4444;
+}
+
+.form-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-tips {
+  color: #666;
+  font-size: 12px;
+  margin-top: -10px;
+  margin-bottom: 20px;
+}
+
+/* 对话框按钮样式 */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cancel-btn,
+.submit-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.cancel-btn {
+  background-color: #f3f4f6;
+  color: #333;
+}
+
+.submit-btn {
+  background-color: #3b82f6;
+  color: white;
 }
 
 /* // 为不同类型的禁用按钮添加特定样式（可选） */

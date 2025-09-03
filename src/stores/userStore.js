@@ -35,11 +35,12 @@ export const useUserStore = defineStore('user', () => {
       const storedRefreshToken = getRefresh_token();
       
       if (storedToken) {
-        access_token.value = storedToken;
-        refresh_token.value = storedRefreshToken;
-        const userData = await getUser();
-        // 获取用户信息后，更新userstore
-      } else {
+          access_token.value = storedToken;
+          refresh_token.value = storedRefreshToken;
+          const userData = await getUser();
+          // 获取用户信息后，更新userstore
+          setUser(userData);
+        } else {
         // 当token不存在时，确保清除状态
         access_token.value = '';
         refresh_token.value = '';

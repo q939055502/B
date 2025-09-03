@@ -1,6 +1,6 @@
 import { ElMessage } from 'element-plus';
 import { adminService as apiAdminService } from '../../api/admin/index.js';
-import { HTTP_200_OK } from '../../utils/status_codes.js';
+import { HTTP_200_OK, HTTP_201_CREATED } from '../../utils/status_codes.js';
 import { useAdminStore } from '../../stores/adminStore.js';
 
 export class AdminService {
@@ -93,11 +93,11 @@ export class AdminService {
 
   async getRoles() { // 获取角色列表
     try {
-      const res = await apiAdminService.getRoles();
+      const res = await apiAdminService.getRoles(); // 修正API调用
       const adminStore = useAdminStore();
 
-      if (res.data.code === HTTP_200_OK) {
-        const roles = res.data?.data || res.data || [];
+      if (res.data?.code === HTTP_200_OK) {
+        const roles = res.data?.data || [];
         adminStore.roleList.value = roles;
         return roles;
       } else {
@@ -148,7 +148,7 @@ export class AdminService {
 
       const res = await apiAdminService.getRolePermissions(roleId);
 
-      if (res.data.code === HTTP_200_OK) {
+      if (res.data?.code === HTTP_200_OK) {
         return res.data?.data || [];
       } else {
         console.error('获取角色权限失败', res);
@@ -171,7 +171,7 @@ export class AdminService {
 
       const res = await apiAdminService.getUserPermissions(userId);
 
-      if (res.data.code === HTTP_200_OK) {
+      if (res.data?.code === HTTP_200_OK) {
         return res.data?.data || res.data || [];
       } else {
         console.error('获取用户权限失败', res);
@@ -193,7 +193,7 @@ export class AdminService {
       }
 
       const res = await apiAdminService.getUserRoles(userId);
-      if (res.data.code === HTTP_200_OK) {
+      if (res.data?.code === HTTP_200_OK) {
         return res.data?.data || res.data || [];
       } else {
         console.error('获取用户角色失败', res);
@@ -226,7 +226,7 @@ export class AdminService {
 
       const res = await apiAdminService.createUser(formattedData);
 
-      if (res.data?.success) {
+      if (res.data?.code === HTTP_200_OK) {
         ElMessage.success('创建用户成功');
         return true;
       } else {
@@ -272,7 +272,7 @@ export class AdminService {
 
       const res = await apiAdminService.updateUser(userId, userData);
 
-      if (res.data?.success) {
+      if (res.data?.code === HTTP_200_OK) {
         ElMessage.success('更新用户成功');
         return true;
       } else {
@@ -293,7 +293,7 @@ export class AdminService {
 
       const res = await apiAdminService.deleteUser(userId);
 
-      if (res.data?.success) {
+      if (res.data?.code === HTTP_200_OK) {
         ElMessage.success('删除用户成功');
         return true;
       } else {
@@ -313,7 +313,7 @@ export class AdminService {
       }
 
       if (![0, 1, 2].includes(Number(status))) {
-        throw new Error('无效的状态值，必须是0(禁用)、1(正常)或2(待验证)');
+        throw new Error('无效的状态值，必须是0(删除)、1(正常)或2(禁用)');
       }
 
       // 参数格式化，将userId映射为staff_id
@@ -323,7 +323,7 @@ export class AdminService {
       };
       const res = await apiAdminService.updateUserStatus(formattedData);
 
-      if (res.data?.success) {
+      if (res.data?.code === HTTP_200_OK) {
         ElMessage.success(`用户状态已${status === 1 ? '启用' : '禁用'}`);
         return true;
       } else {
@@ -344,12 +344,14 @@ export class AdminService {
       }
 
       const res = await apiAdminService.createRole(roleData);
-      if (res.code === HTTP_200_OK) {
+      if (res.data?.code === HTTP_201_CREATED || res.data?.code === HTTP_200_OK) {
         ElMessage.success('角色创建成功');
-        return res.data?.data || res.data || null;
+        // 更新本地缓存
+        await this.getRoles();
+        return res.data?.data || null;
       } else {
         console.error('创建角色失败', res);
-        ElMessage.error(`创建角色失败：${res.message || '未知错误'}`);
+        ElMessage.error(`创建角色失败：${res.data?.message || '未知错误'}`);
         return null;
       }
     } catch (error) {
@@ -359,30 +361,63 @@ export class AdminService {
     }
   }
 
-  async addRolePermissions(roleId, params) { // 为角色添加权限
+  async deleteRole(roleId) { // 删除角色
+    try {
+      if (!roleId) {
+        throw new Error('角色ID不能为空');
+      }
+
+      // 将roleId转换为整数类型
+      const intRoleId = parseInt(roleId, 10);
+      if (isNaN(intRoleId)) {
+        throw new Error('无效的角色ID');
+      }
+
+      const res = await apiAdminService.deleteRole(intRoleId);
+
+      if (res.data?.code === HTTP_200_OK) {
+        ElMessage.success('角色删除成功');
+        // 更新本地缓存
+        await this.getRoles();
+        return true;
+      } else {
+        throw new Error(res.data?.message || '删除角色失败');
+      }
+    } catch (error) {
+      console.error('删除角色失败:', error);
+      ElMessage.error(`删除角色失败：${error.message || '未知错误'}`);
+      return false;
+    }
+  }
+
+  async updateRolePermissions(roleId, permissionData) { // 更新角色权限
     try {
       if (!roleId) {
         ElMessage.warning('角色ID不能为空');
         return false;
       }
 
-      if (!params || !params.permissions) {
-        ElMessage.warning('请提供权限数据');
+      if (!permissionData || !Array.isArray(permissionData.permission_ids)) {
+        ElMessage.warning('请提供有效的权限ID列表（permission_ids）');
         return false;
       }
 
-      const res = await apiAdminService.addRolePermissions(roleId, params);
-      if (res.code === HTTP_200_OK) {
-        ElMessage.success('权限添加成功');
+      const res = await apiAdminService.updateRolePermissions(roleId, {
+        permission_ids: permissionData.permission_ids
+      });
+      if (res.data?.code === HTTP_200_OK) {
+        ElMessage.success('角色权限更新成功');
+        // 更新本地缓存的角色权限
+        await this.getRolePermissions(roleId);
         return true;
       } else {
-        console.error('添加角色权限失败', res);
-        ElMessage.error(`添加角色权限失败：${res.message || '未知错误'}`);
+        console.error('更新角色权限失败', res);
+        ElMessage.error(`更新角色权限失败：${res.data?.message || '未知错误'}`);
         return false;
       }
     } catch (error) {
-      console.error('添加角色权限失败', error);
-      ElMessage.error(`添加角色权限失败：${error.message || '未知错误'}`);
+      console.error('更新角色权限失败', error);
+      ElMessage.error(`更新角色权限失败：${error.message || '未知错误'}`);
       return false;
     }
   }
@@ -400,12 +435,12 @@ export class AdminService {
       }
 
       const res = await apiAdminService.addUserRoles(userId, params);
-      if (res.code === HTTP_200_OK) {
+      if (res.data?.code === HTTP_200_OK) {
         ElMessage.success('角色添加成功');
         return true;
       } else {
         console.error('添加用户角色失败', res);
-        ElMessage.error(`添加用户角色失败：${res.message || '未知错误'}`);
+        ElMessage.error(`添加用户角色失败：${res.data?.message || '未知错误'}`);
         return false;
       }
     } catch (error) {
@@ -428,12 +463,12 @@ export class AdminService {
       }
 
       const res = await apiAdminService.removeUserRole(userId, roleId);
-      if (res.code === HTTP_200_OK) {
+      if (res.data?.code === HTTP_200_OK) {
         ElMessage.success('角色移除成功');
         return true;
       } else {
         console.error('移除用户角色失败', res);
-        ElMessage.error(`移除用户角色失败：${res.message || '未知错误'}`);
+        ElMessage.error(`移除用户角色失败：${res.data?.message || '未知错误'}`);
         return false;
       }
     } catch (error) {
@@ -456,7 +491,7 @@ export class AdminService {
       }
 
       const res = await apiAdminService.updateStaffPermissions(userId, params);
-      if (res.data?.success) {
+      if (res.data?.code === HTTP_200_OK) {
         ElMessage.success('更新用户权限成功');
         return true;
       } else {
@@ -487,7 +522,7 @@ export class AdminService {
       };
 
       const res = await apiAdminService.updateUserRole(userId, formattedData);
-      if (res.data?.success) {
+      if (res.data?.code === HTTP_200_OK) {
         ElMessage.success('角色更新成功');
         return true;
       } else {
@@ -496,6 +531,44 @@ export class AdminService {
     } catch (error) {
       console.error('更新用户角色失败:', error);
       ElMessage.error(`更新用户角色失败：${error.message || '未知错误'}`);
+      return false;
+    }
+  }
+
+  async updateUserPassword(userId, newPassword) { // 修改用户密码
+    try {
+      if (!userId) {
+        throw new Error('用户ID不能为空');
+      }
+
+      if (!newPassword) {
+        throw new Error('新密码不能为空');
+      }
+
+      // 密码长度验证
+      if (newPassword.length < 6) {
+        throw new Error('密码长度不能少于6位');
+      }
+
+      // 构建请求数据
+      const requestData = {
+        staff_id: userId,
+        new_password: newPassword
+      };
+
+      console.log('修改用户密码:', requestData);
+
+      const res = await apiAdminService.updateStaffPassword(requestData);
+
+      if (res.data?.code === HTTP_200_OK) {
+        ElMessage.success('修改用户密码成功');
+        return res.data?.data || true;
+      } else {
+        throw new Error(res.data?.message || '修改用户密码失败');
+      }
+    } catch (error) {
+      console.error('修改用户密码失败:', error);
+      ElMessage.error(`修改用户密码失败：${error.message || '未知错误'}`);
       return false;
     }
   }

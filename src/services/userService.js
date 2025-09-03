@@ -205,6 +205,11 @@ async handleLogin(loginForm) {
         remember_me: loginForm.rememberMe
       });
 
+      if (res.data.message === '用户名或密码错误') {
+        alert('用户名或密码错误');
+        return;
+      }
+
       // 根据记住我状态存储用户名
       if (loginForm.rememberMe) {
         localStorage.setItem('remembered_username', loginForm.username);
@@ -212,10 +217,14 @@ async handleLogin(loginForm) {
         localStorage.removeItem('remembered_username');
       }
 
+      
+
       // 检查响应格式
       if (!res.data) {
         throw new Error(res.data?.message || '登录失败：无效的响应');
       }
+
+      
 
       // 处理登录成功逻辑
       const { access_token: newToken, refresh_token: newRefreshToken } = res.data;
